@@ -90,7 +90,7 @@ process_options -->
     opt(spaces, false),
     opt(cntrl,  true),
     opt(punct,  true),
-    opt(to,     atom),
+    opt(to,     atoms),
     opt(pack,   false).
 
 %% opt(+OptionFunctor:atom, DefaultValue:nonvar)
@@ -173,10 +173,10 @@ opt_pack(true)  --> state(T0, T1),
 
 %% Convert tokens to alternative representations.
 token_to(Type, Token, Converted) :-
-    ( Type == string -> Conversion = inverse(string_codes)
-    ; Type == atom   -> Conversion = inverse(atom_codes)
-    ; Type == chars  -> Conversion = inverse(string_chars)
-    ; Type == codes  -> Conversion = string_codes
+    ( Type == strings -> Conversion = inverse(string_codes)
+    ; Type == atoms   -> Conversion = inverse(atom_codes)
+    ; Type == chars   -> Conversion = inverse(string_chars)
+    ; Type == codes   -> Conversion = string_codes
     ),
     call_into_term(Conversion, Token, Converted).
 
