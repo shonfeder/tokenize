@@ -9,7 +9,11 @@
 %   allow for the preservation of white space or control characters, and
 %   it only tokenizes into a list of atoms...
 
-%% TODO:
+%% untokenize(+Tokens, ?Untokens).
+%
+% Should take a list of tokenized terms and generate text in desired format.
+%
+% TODO:
 %
 %   add options:
 %       - structure(Options:[lines, brackets])
