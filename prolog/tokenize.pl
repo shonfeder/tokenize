@@ -18,7 +18,7 @@
 % TODO:
 %
 
-%% untokenize(+Tokens, ?Untokens).
+%% untokenize(+Tokens, ?Untokens)
 %
 %   Should take a list of tokenized terms and generate text in desired format.
 %
