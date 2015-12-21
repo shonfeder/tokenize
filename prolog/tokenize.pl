@@ -1,6 +1,9 @@
 :- module(tokenize,
           [ tokenize/2,
-            tokenize/3
+            tokenize/3,
+            tokenize_file/2,
+            tokenize_file/3,
+            untokenize/2
           ]).
 
 %% Rational:
@@ -8,16 +11,23 @@
 %   tokenize_atom/2, in library(porter_stem), is inflexible, in that it doesn't
 %   allow for the preservation of white space or control characters, and
 %   it only tokenizes into a list of atoms...
-
-%% untokenize(+Tokens, ?Untokens).
 %
-% Should take a list of tokenized terms and generate text in desired format.
+%   Ideally, provided I have the drive and/or there is any interest in this package,
+%   this would become an extensible, easily configurable tokenizing utilty.
 %
 % TODO:
 %
-%   add options:
+
+%% untokenize(+Tokens, ?Untokens).
+%
+%   Should take a list of tokenized terms and generate text in desired format.
+%
+%   TODO:
+%
+%   - add options:
 %       - structure(Options:[lines, brackets])
 %       - mode(generate) ; mode(parse)
+%       - add output format option
 
 untokenize(Tokens, Untokens) :-
     untokenize(Tokens, Untokens, []).
@@ -65,6 +75,13 @@ tokenize(Text, Tokens, Options) :-
     phrase(process_options, [Options-Codes], [Options-Tokens]).
 
 %% PROCESSING OPTIONS
+%
+%   NOTE: This way of processing options is probably stupid.
+%   I will correct/improve/rewrite it if there is ever a good
+%   reason to. But for now, it works.
+%
+%   TODO: Throw exception if invalid options are passed in.
+%   At the moment it just fails.
 
 %% Dispatches dcgs by option-list functors, with default values.
 process_options -->
@@ -73,7 +90,7 @@ process_options -->
     opt(spaces, false),
     opt(cntrl,  true),
     opt(punct,  true),
-    opt(to,     atoms),
+    opt(to,     atom),
     opt(pack,   false).
 
 %% opt(+OptionFunctor:atom, DefaultValue:nonvar)
@@ -96,10 +113,13 @@ opt(Opt, Default, DCG) -->
     DCG_Selection,
     state(Text1, Opts-Text1).
 %% This ugly bit should be dispensed with...
-opt(Opt, Default, _) --> state(Opts-_), 
-    {   var(Default), \+ option(Opt, Opts),
-        writeln("Unknown options passed top opt//3: "),
-        write(Opt) }.
+opt(Opt, Default, _) -->
+    state(Opts-_),
+    {
+        var(Default), \+ option(Opt, Opts),
+        writeln("Unknown options passed to opt//3: "),
+        write(Opt)
+    }.
 
 %% non_opt(+DCG).
 %
@@ -241,7 +261,6 @@ call_into_term(P, Term, Result) :-
 
 inverse(P, A, B) :-
     call(P, B, A).
-
 
 pad(T_Args, X, T_X_Args) :-
     T_Args   =.. [T|Args],
