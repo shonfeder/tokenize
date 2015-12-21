@@ -2,7 +2,7 @@ name(tokenize).
 title('A nascent tokenization library').
 
 version('0.1.0').
-download('https://github.com/aBathologist/tokenize/archive/master.zip').
+download('https://github.com/aBathologist/tokenize/archive/v0.1.0.zip').
 
 author('Shon Feder', 'shon.feder@gmail.com').
 packager('Shon Feder', 'shon.feder@gmail.com').
