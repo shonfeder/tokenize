@@ -87,7 +87,7 @@ tokenize(Text, Tokens, Options) :-
 process_options -->
     opt(cased,  false),
     non_opt(tokenize_text),
-    opt(spaces, false),
+    opt(spaces, true),
     opt(cntrl,  true),
     opt(punct,  true),
     opt(to,     atoms),
