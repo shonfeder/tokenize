@@ -6,28 +6,39 @@
             untokenize/2
           ]).
 
-%% Rational:
-%
-%   tokenize_atom/2, in library(porter_stem), is inflexible, in that it doesn't
-%   allow for the preservation of white space or control characters, and
-%   it only tokenizes into a list of atoms...
-%
-%   Ideally, provided I have the drive and/or there is any interest in this package,
-%   this would become an extensible, easily configurable tokenizing utilty.
-%
-% TODO:
-%
+/** <module> tokenize
 
-%% untokenize(+Tokens, ?Untokens)
+This module offers a simple tokenizer with some basic options.
+
+It may be improved towards a cleaner and more extensible tool if there
+is enough interest (from myself or others).
+
+@author Shon Feder
+@license <http://unlicense.org/>
+
+Rational:
+
+tokenize_atom/2, in library(porter_stem), is inflexible, in that it doesn't
+allow for the preservation of white space or control characters, and
+it only tokenizes into a list of atoms. This module allows for options to
+include or exclude things like spaces and punctuation, and for packing tokens.
+
+It also provides a simple predicate for reading lists of tokens back into
+text.
+
+Ideally, provided I have the drive and/or there is any interest in this package,
+this would become an extensible, easily configurable tokenizing utilty.
+
+*/
+
+%% untokenize(+Tokens:list(term), -Untokens:list(codes)) is semidet.
 %
-%   Should take a list of tokenized terms and generate text in desired format.
-%
-%   TODO:
-%
-%   - add options:
-%       - structure(Options:[lines, brackets])
-%       - mode(generate) ; mode(parse)
-%       - add output format option
+%   True when Untokens is unified with a code list representation of each
+%   token in Tokens.
+
+% TODO  structure(Options:[lines, brackets])
+% TODO  mode(generate) ; mode(parse)
+% TODO  add output format option
 
 untokenize(Tokens, Untokens) :-
     untokenize(Tokens, Untokens, []).
@@ -38,43 +49,69 @@ untokenize(Tokens, Untokens, _Options) :-
 non_tokens([T])    --> T.
 non_tokens([T|Ts]) --> T, non_tokens(Ts).
 
-%% Tokenization from various sources.
+%% tokenize_file(+File:atom, -Tokens:list(term)) is semidet.
 %
-%   Note: does not use phrase_from_file/3, thus not lazy or transparent
-%   This choice was made so that tokenize_file will work with remotely
-%   accessed files.
+%   @see tokenize_file/3 is called with an empty list of options: thus, with defaults.
+%
 
-%% TODO:
-%
-%   add more source options
+% Note: does not use phrase_from_file/3, thus not lazy or transparent
+% This choice was made so that tokenize_file will work with remotely
+% accessed files.
+
+% TODO: add more source options
 
 tokenize_file(File, Tokens) :-
     tokenize_file(File, Tokens, []).
+
+%% tokenize_file(+File:atom, -Tokens:list(term), +Options:list(term)) is semidet.
+%
+%   True when Tokens is unified with a list of tokens represening
+%   the text of File.
+%
+%   @see tokenize/3 which has the same available options and behavior.
 
 tokenize_file(File, Tokens, Options) :-
     read_file_to_codes(File, Codes, [encoding(utf8)]),
     tokenize(Codes, Tokens, Options).
 
-%% Tokenize text:
+%% tokenize(+Text:list(code), -Tokens:list(term)) is semidet.
 %
-%   A token is one of:
-%       - a word (contiguous alpha-numeric chars): `word(W)`
-%       - a punctuation mark (determined by `char_type(C, punct)`): `punct(P)`
-%       - a control character (determined by `char_typ(C, cntrl)`): `cntrl(C)`
-%       - a space ( == ` `): `spc(S)`.
-%
-%   Supports options:
-%       TODO:
-%          - add support for unicode
+%   @see tokenize/3 is called with an empty list of options: thus, with defaults.
+
+% TODO: add support for unicode
 
 tokenize(Text, Tokens) :-
     tokenize(Text, Tokens, []).
+
+%% tokenize(+Text:list(code), -Tokens:list(term), +Options:list(term)) is semidet.
+%
+%   True when Tokens is unified with a list of tokens representing the text from
+%   Text, according to the options specified in Options.
+%
+%   NOTE: this predicate currently fails if invalid option arguments are given
+%   and, worse, it succeeds silently if there are invalid option parameters.
+%
+%   A token is one of:
+%
+%   * a word (contiguous alpha-numeric chars): `word(W)`
+%   * a punctuation mark (determined by `char_type(C, punct)`): `punct(P)`
+%   * a control character (determined by `char_typ(C, cntrl)`): `cntrl(C)`
+%   * a space ( == ` `): `spc(S)`.
+%
+%  Valid options are:
+%
+%   * cased(+bool)  : Determines whether tokens perserve cases of the source text.
+%   * spaces(+bool) : Determines whether spaces are represted as tokens or discarded.
+%   * cntrl(+bool)  : Determines whether control characters are represented as tokens or discarded.
+%   * punct(+bool)  : Determines whether punctuation characters are represented as tokens or discarded.
+%   * to(+on_of([strings,atoms,chars,codes])) : Determines the representation format used for the tokens.
+%   * pack(+bool)   : Determines whether tokens are packed or repeated.
 
 tokenize(Text, Tokens, Options) :-
     string_codes(Text, Codes),
     phrase(process_options, [Options-Codes], [Options-Tokens]).
 
-%% PROCESSING OPTIONS
+% PROCESSING OPTIONS
 %
 %   NOTE: This way of processing options is probably stupid.
 %   I will correct/improve/rewrite it if there is ever a good
