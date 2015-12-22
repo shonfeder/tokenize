@@ -27,7 +27,7 @@ It also provides a simple predicate for reading lists of tokens back into
 text.
 
 Ideally, provided I have the drive and/or there is any interest in this package,
-this would become an extensible, easily configurable tokenizing utilty.
+this would become an extensible, easily configurable tokenizing utility.
 
 */
 
