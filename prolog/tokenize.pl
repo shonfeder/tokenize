@@ -10,9 +10,6 @@
 
 This module offers a simple tokenizer with some basic options.
 
-It may be improved towards a cleaner and more extensible tool if there
-is enough interest (from myself or others).
-
 @author Shon Feder
 @license <http://unlicense.org/>
 
@@ -20,59 +17,13 @@ Rational:
 
 tokenize_atom/2, in library(porter_stem), is inflexible, in that it doesn't
 allow for the preservation of white space or control characters, and
-it only tokenizes into a list of atoms. This module allows for options to
+it only tokenizes into a list of atoms. This library allows for options to
 include or exclude things like spaces and punctuation, and for packing tokens.
 
 It also provides a simple predicate for reading lists of tokens back into
 text.
 
-Ideally, provided I have the drive and/or there is any interest in this package,
-this would become an extensible, easily configurable tokenizing utility.
-
 */
-
-%% untokenize(+Tokens:list(term), -Untokens:list(codes)) is semidet.
-%
-%   True when Untokens is unified with a code list representation of each
-%   token in Tokens.
-
-% TODO  structure(Options:[lines, brackets])
-% TODO  mode(generate) ; mode(parse)
-% TODO  add output format option
-
-untokenize(Tokens, Untokens) :-
-    untokenize(Tokens, Untokens, []).
-untokenize(Tokens, Untokens, _Options) :-
-    maplist(token_to(codes), Tokens, TokenCodes),
-    phrase(non_tokens(TokenCodes), Untokens).
-
-non_tokens([T])    --> T.
-non_tokens([T|Ts]) --> T, non_tokens(Ts).
-
-%% tokenize_file(+File:atom, -Tokens:list(term)) is semidet.
-%
-%   @see tokenize_file/3 is called with an empty list of options: thus, with defaults.
-%
-
-% Note: does not use phrase_from_file/3, thus not lazy or transparent
-% This choice was made so that tokenize_file will work with remotely
-% accessed files.
-
-% TODO: add more source options
-
-tokenize_file(File, Tokens) :-
-    tokenize_file(File, Tokens, []).
-
-%% tokenize_file(+File:atom, -Tokens:list(term), +Options:list(term)) is semidet.
-%
-%   True when Tokens is unified with a list of tokens represening
-%   the text of File.
-%
-%   @see tokenize/3 which has the same available options and behavior.
-
-tokenize_file(File, Tokens, Options) :-
-    read_file_to_codes(File, Codes, [encoding(utf8)]),
-    tokenize(Codes, Tokens, Options).
 
 %% tokenize(+Text:list(code), -Tokens:list(term)) is semidet.
 %
@@ -108,8 +59,53 @@ tokenize(Text, Tokens) :-
 %   * pack(+bool)   : Determines whether tokens are packed or repeated.
 
 tokenize(Text, Tokens, Options) :-
+    must_be(nonvar, Text),
     string_codes(Text, Codes),
     phrase(process_options, [Options-Codes], [Options-Tokens]).
+
+%% untokenize(+Tokens:list(term), -Untokens:list(codes)) is semidet.
+%
+%   True when Untokens is unified with a code list representation of each
+%   token in Tokens.
+
+% TODO  structure(Options:[lines, brackets])
+% TODO  mode(generate) ; mode(parse)
+% TODO  add output format option
+
+untokenize(Tokens, Untokens) :-
+    untokenize(Tokens, Untokens, []).
+untokenize(Tokens, Untokens, _Options) :-
+    maplist(token_to(codes), Tokens, TokenCodes),
+    phrase(non_tokens(TokenCodes), Untokens).
+
+non_tokens([T])    --> T.
+non_tokens([T|Ts]) --> T, non_tokens(Ts).
+
+%% tokenize_file(+File:atom, -Tokens:list(term)) is semidet.
+%
+%   @see tokenize_file/3 is called with an empty list of options: thus, with defaults.
+%
+
+% Note: does not use phrase_from_file/3, thus not lazy or transparent
+% This choice was made so that tokenize_file will work with remotely
+% accessed files.
+% TODO: make this configurable, so it can be used in the different modes
+
+% TODO: add more source options
+
+tokenize_file(File, Tokens) :-
+    tokenize_file(File, Tokens, []).
+
+%% tokenize_file(+File:atom, -Tokens:list(term), +Options:list(term)) is semidet.
+%
+%   True when Tokens is unified with a list of tokens represening
+%   the text of File.
+%
+%   @see tokenize/3 which has the same available options and behavior.
+
+tokenize_file(File, Tokens, Options) :-
+    read_file_to_codes(File, Codes, [encoding(utf8)]),
+    tokenize(Codes, Tokens, Options).
 
 % PROCESSING OPTIONS
 %
@@ -226,6 +222,7 @@ pack_tokens([T|Ts]) --> pack_token(T), pack_tokens(Ts).
 pack_token(P) --> pack(Token, N), {Token =.. [F,T], P =.. [F,T,N]}.
 
 pack(X, Count) --> [X], pack(X, 1, Count).
+
 pack(_, Total, Total)      --> call(eos).
 pack(X, Total, Total), [Y] --> [Y], { Y \= X }.
 pack(X, Count, Total)      --> [X], { succ(Count, NewCount) },
@@ -233,11 +230,13 @@ pack(X, Count, Total)      --> [X], { succ(Count, NewCount) },
 
 
 
-%% PARSING
+% PARSING
 
 tokens([T])    --> token(T), call(eos), !.
 tokens([T|Ts]) --> token(T), tokens(Ts).
-%% tokens(_)   --> {length(L, 200)}, L, {format(L)}, halt, !. % For debugging.
+
+% NOTE for debugging
+% tokens(_)   --> {length(L, 200)}, L, {format(L)}, halt, !.
 
 token(word(W))     --> word(W), call(eos), !.
 token(word(W)),` ` --> word(W), ` `.
@@ -267,9 +266,6 @@ nasciis([C]),[D] --> nascii(C), [D], {D < 127}.
 nasciis([C|Cs])  --> nascii(C), nasciis(Cs).
 
 nascii(C)        --> [C], {C > 127}.
-
-%% blanks --> [].
-%% blanks --> ' '.
 
 ' ' --> space.
 ' ' --> space, ' '.
