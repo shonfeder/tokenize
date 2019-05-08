@@ -58,25 +58,30 @@ tokenize(Text, Tokens) :-
 %   * to(+on_of([strings,atoms,chars,codes])) : Determines the representation format used for the tokens.
 %   * pack(+bool)   : Determines whether tokens are packed or repeated.
 
+% TODO is it possible to achieve the proper semidet  without the cut?
+
 tokenize(Text, Tokens, Options) :-
     must_be(nonvar, Text),
     string_codes(Text, Codes),
-    phrase(process_options, [Options-Codes], [Options-Tokens]).
+    phrase(process_options, [Options-Codes], [Options-Tokens]),
+    !.
 
 %% untokenize(+Tokens:list(term), -Untokens:list(codes)) is semidet.
 %
 %   True when Untokens is unified with a code list representation of each
 %   token in Tokens.
 
-% TODO  structure(Options:[lines, brackets])
-% TODO  mode(generate) ; mode(parse)
-% TODO  add output format option
+% TODO structure(Options:[lines, brackets])
+% TODO mode(generate) ; mode(parse)
+% TODO add output format option
+% TODO is it possible to achieve the proper semidet  without the cut?
 
 untokenize(Tokens, Untokens) :-
     untokenize(Tokens, Untokens, []).
 untokenize(Tokens, Untokens, _Options) :-
     maplist(token_to(codes), Tokens, TokenCodes),
-    phrase(non_tokens(TokenCodes), Untokens).
+    phrase(non_tokens(TokenCodes), Untokens),
+    !.
 
 non_tokens([T])    --> T.
 non_tokens([T|Ts]) --> T, non_tokens(Ts).

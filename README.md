@@ -25,3 +25,6 @@ It is packaged as an SWI-Prolog pack, available [here](http://www.swi-prolog.org
 
 Please [visit the wiki](https://github.com/aBathologist/tokenize/wiki/tokenize.pl-options-and-examples) for more detailed instructions and examples, including a full list of options supported.
 
+# Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
