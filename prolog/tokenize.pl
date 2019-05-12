@@ -24,6 +24,7 @@ It also provides a simple predicate for reading lists of tokens back into
 text.
 
 */
+:- use_module(library(dcg/basics), [eos//0, number//1]).
 
 % Ensure we interpret backs as enclosing code lists in this module.
 :- set_prolog_flag(back_quotes, codes).
@@ -55,13 +56,19 @@ tokenize(Text, Tokens) :-
 %  Valid options are:
 %
 %   * cased(+bool)  : Determines whether tokens perserve cases of the source text.
-%   * spaces(+bool) : Determines whether spaces are represted as tokens or discarded.
-%   * cntrl(+bool)  : Determines whether control characters are represented as tokens or discarded.
-%   * punct(+bool)  : Determines whether punctuation characters are represented as tokens or discarded.
-%   * to(+on_of([strings,atoms,chars,codes])) : Determines the representation format used for the tokens.
-%   * pack(+bool)   : Determines whether tokens are packed or repeated.
+%   * spaces(+bool) : Determines whether spaces are represted as tokens
+%     or discarded.
+%   * cntrl(+bool)  : Determines whether control characters are represented
+%     as tokens or discarded.
+%   * punct(+bool)  : Determines whether punctuation characters are represented
+%     as tokens or discarded.
+%   * to(+one_of([strings,atoms,chars,codes])) : Determines the
+%      representation format used for the tokens.
+%   * pack(+bool) :   Determines whether tokens are packed or repeated.
 
 % TODO is it possible to achieve the proper semidet  without the cut?
+% Annie sez some parses are ambiguous, not even sure the cut should be
+% there
 
 tokenize(Text, Tokens, Options) :-
     must_be(nonvar, Text),
@@ -138,6 +145,8 @@ process_options -->
 %
 %   If dcg functor is identical to the option name with 'opt_' prefixed,
 %   then the dcg functor can be omitted.
+%
+%
 
 opt(Opt, Default) -->
     { atom_concat('opt_', Opt, Opt_DCG) },
@@ -160,7 +169,7 @@ opt(Opt, Default, _) -->
         var(Default), \+ option(Opt, Opts),
         writeln("Unknown options passed to opt//3: "),
         write(Opt)
-    }.
+    }.   % TODO use print_message for this
 
 %% non_opt(+DCG).
 %
@@ -208,11 +217,12 @@ opt_pack(false) --> [].
 opt_pack(true)  --> state(T0, T1),
     { phrase(pack_tokens(T1), T0) }.
 
-
-
-%% POST PROCESSING
+		 /*******************************
+		 *      POST_PROCESSING		*
+		 *******************************/
 
 %% Convert tokens to alternative representations.
+token_to(_, number(X), number(X)) :- !.
 token_to(Type, Token, Converted) :-
     ( Type == strings -> Conversion = inverse(string_codes)
     ; Type == atoms   -> Conversion = inverse(atom_codes)
@@ -231,22 +241,26 @@ pack_token(P) --> pack(Token, N), {Token =.. [F,T], P =.. [F,T,N]}.
 
 pack(X, Count) --> [X], pack(X, 1, Count).
 
-pack(_, Total, Total)      --> call(eos).
+pack(_, Total, Total)      --> eos.
 pack(X, Total, Total), [Y] --> [Y], { Y \= X }.
 pack(X, Count, Total)      --> [X], { succ(Count, NewCount) },
                                pack(X, NewCount, Total).
 
 
 
-% PARSING
+		 /*******************************
+		 *        PARSING               *
+		 *******************************/
 
-tokens([T])    --> token(T), call(eos), !.
+
+tokens([T])    --> token(T), eos, !.
 tokens([T|Ts]) --> token(T), tokens(Ts).
 
 % NOTE for debugging
 % tokens(_)   --> {length(L, 200)}, L, {format(L)}, halt, !.
 
-token(word(W))     --> word(W), call(eos), !.
+token(number(N))   --> number(N), !.
+token(word(W))     --> word(W), eos, !.
 token(word(W)),` ` --> word(W), ` `.
 token(word(W)), C  --> word(W), (punct(C) ; cntrl(C) ; nasciis(C)).
 token(spc(S))      --> spc(S).
@@ -258,7 +272,7 @@ token(other(O))    --> nasciis(O).
 spc(` `) --> ` `.
 
 sep --> ' '.
-sep --> call(eos), !.
+sep --> eos, !.
 
 word(W) --> csyms(W).
 
@@ -269,7 +283,7 @@ csym(L)       --> [L], {code_type(L, csym)}.
 
 
 % non ascii's
-nasciis([C])     --> nascii(C), (call(eos), !).
+nasciis([C])     --> nascii(C), eos, !.
 nasciis([C]),[D] --> nascii(C), [D], {D < 127}.
 nasciis([C|Cs])  --> nascii(C), nasciis(Cs).
 
@@ -285,8 +299,6 @@ space --> [S], {code_type(S, white)}.
 
 punct([P]) --> [P], {code_type(P, punct)}.
 cntrl([C]) --> [C], {code_type(C, cntrl)}.
-
-eos([], []).
 
 %% move to general module
 
