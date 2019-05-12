@@ -59,10 +59,20 @@ need any help! :)
 ## Running tests
 
 Tests are located in the [`./test`](./test) directory. To run the test suite,
-simply execute the test file:
+simply execute make test:
 
 ```sh
-$ ./test/test.pl
+$ make test
 % PL-Unit: tokenize .. done
 % All 2 tests passed
+```
+
+If inside the swipl repl, make sure to load the test file and query run_tests.
+
+```prolog
+?- [test/test].
+?- run_tests.
+% PL-Unit: tokenize .. done
+% All 2 tests passed
+true.
 ```

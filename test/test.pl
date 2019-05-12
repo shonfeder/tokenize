@@ -1,18 +1,3 @@
-#!/usr/bin/env swipl
-/** <module>  Unit tests for the tokenize library
- *
- * To run these tests, execute this file
- *
- *    ./test/test.pl
- */
-
-:- initialization(main, main).
-
-main(_Argv) :-
-    run_tests.
-
-:- begin_tests(tokenize).
-
 :- dynamic user:file_search_path/2.
 :- multifile user:file_search_path/2.
 
@@ -22,8 +7,7 @@ main(_Argv) :-
    asserta(user:file_search_path(package, PackageDir)).
 
 :- use_module(package(tokenize)).
-
-% TESTS START HERE
+:- begin_tests(tokenize).
 
 test('Hello, Tokenize!',
      [true(Actual == Expected)]
