@@ -10,7 +10,7 @@ engaging in the project.
 
 ## Overall direction and aims
 
-Consult the `[design_notes.md](design_notes.md)` to see the latest codified
+Consult the [`design_notes.md`](design_notes.md) to see the latest codified
 design philosophy and principles.
 
 ## Setting up Development
