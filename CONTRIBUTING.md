@@ -1,8 +1,12 @@
 # Contributing
 
+Contributions of all kinds are welcome: feedback, PRs, reviews, ideas, bug
+reports, etc.
+
 ## Code of Conduct
 
-TODO
+Please review and accept to our [code of conduct](CODE_OF_CONDUCT.md) prior to
+engaging in the project.
 
 ## Setting up Development
 
