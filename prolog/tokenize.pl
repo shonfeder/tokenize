@@ -25,6 +25,9 @@ text.
 
 */
 
+% Ensure we interpret backs as enclosing code lists in this module.
+:- set_prolog_flag(back_quotes, codes).
+
 %% tokenize(+Text:list(code), -Tokens:list(term)) is semidet.
 %
 %   @see tokenize/3 is called with an empty list of options: thus, with defaults.
