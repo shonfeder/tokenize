@@ -42,8 +42,9 @@ words_(Opt), [H] -->
     [H],
     {\+ code_type(H, csym)},
     words_(Opt).
-words_(Opt), [word(Word)] -->
+words_(Opt), [word(AWord)] -->
     word(Word),
+    { atom_codes(AWord, Word) },
     words_(Opt).
 
 word([H|T]) -->
