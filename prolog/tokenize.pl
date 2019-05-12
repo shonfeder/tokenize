@@ -1,9 +1,5 @@
 :- module(tokenize,
-          [ tokenize/2,
-            tokenize/3,
-            tokenize_file/2,
-            tokenize_file/3,
-            untokenize/2
+          [ tokenize_words//1
           ]).
 
 /** <module> tokenize
@@ -11,6 +7,7 @@
 This module offers a simple tokenizer with some basic options.
 
 @author Shon Feder
+@author Anne Ogborn
 @license <http://unlicense.org/>
 
 Rational:
@@ -24,6 +21,74 @@ It also provides a simple predicate for reading lists of tokens back into
 text.
 
 */
+
+:- use_module(library(dcg/basics)).
+
+%!  tokenize_words(+Opt:list(option))// is det
+%
+%   @arg Opt a list of options
+%
+%   Options:
+%
+tokenize_words(Opt) -->
+    words_(Opt),
+    !.
+words_(_Opt, [], []).
+words_(Opt), [H] -->
+    [H],
+    {\+ integer(H)},
+    words_(Opt).
+words_(Opt), [H] -->
+    [H],
+    {\+ code_type(H, csym)},
+    words_(Opt).
+words_(Opt), [word(Word)] -->
+    word(Word),
+    words_(Opt).
+
+word([H|T]) -->
+      [H],
+      {code_type(H, csym)},
+      word(T).
+word([H]) -->
+      [H],
+      {code_type(H, csym)}.
+
+%  test_word('I am a sentence. I have worms.', `I am a sentence. I have worms.`) :-
+do_words(W) :-
+    phrase(tokenize_words([foo]), `I am a sentence. I have worms.`,
+           W).
+
+%!  tokenize_errors// is det
+%
+%   Often the last transformation,
+%   mark the remaining unparsed characters
+%   as errors
+tokenize_errors -->
+    tokenize_errors_(_),
+    !.
+tokenize_errors_(_Opt, [], []).
+tokenize_errors_(Opt), [H] -->
+    [H],
+    {\+ integer(H)},
+    tokenize_errors_(Opt).
+tokenize_errors_(Opt), [error(Sequence)] -->
+    trash(Sequence),
+    tokenize_errors_(Opt).
+
+trash([H|T]) -->
+      [H],
+      { integer(H) },
+      trash(T).
+trash([H]) -->
+      [H],
+      { integer(H) }.
+
+/*
+
+not_a_word([NAW|T],
+
+
 
 %% tokenize(+Text:list(code), -Tokens:list(term)) is semidet.
 %
@@ -306,3 +371,4 @@ inverse(P, A, B) :-
 pad(T_Args, X, T_X_Args) :-
     T_Args   =.. [T|Args],
     T_X_Args =.. [T, X| Args].
+*/
