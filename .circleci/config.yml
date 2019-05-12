@@ -1,1 +1,21 @@
 version: 2
+
+jobs:
+  build:
+    docker:
+      - image: swipl:stable
+
+    steps:
+      - run:
+          # TODO Build custom image to improve build time
+          name: Install git
+          command: |
+            apt update -y
+            apt install git -y
+
+      - checkout
+
+      - run:
+          name: Run tests
+          command: |
+            ./test/test.pl
