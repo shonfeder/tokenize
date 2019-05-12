@@ -55,10 +55,13 @@ tokenize(Text, Tokens) :-
 %   * spaces(+bool) : Determines whether spaces are represted as tokens or discarded.
 %   * cntrl(+bool)  : Determines whether control characters are represented as tokens or discarded.
 %   * punct(+bool)  : Determines whether punctuation characters are represented as tokens or discarded.
-%   * to(+on_of([strings,atoms,chars,codes])) : Determines the representation format used for the tokens.
-%   * pack(+bool)   : Determines whether tokens are packed or repeated.
+%   * to(+one_of([strings,atoms,chars,codes])) : Determines the
+%   representation format used for the tokens. * pack(+bool) :
+%   Determines whether tokens are packed or repeated.
 
 % TODO is it possible to achieve the proper semidet  without the cut?
+% Annie sez some parses are ambiguous, not even sure the cut should be
+% there
 
 tokenize(Text, Tokens, Options) :-
     must_be(nonvar, Text),
