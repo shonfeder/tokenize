@@ -133,8 +133,11 @@ tokenize_file(File, Tokens, Options) :-
 
 %% Dispatches dcgs by option-list functors, with default values.
 process_options -->
+    % Preprocessing
     opt(cased,  false),
+    % Tokenization
     non_opt(tokenize_text),
+    % Postprocessing
     opt(spaces, true),
     opt(cntrl,  true),
     opt(punct,  true),
@@ -184,7 +187,12 @@ non_opt(DCG) -->
 state(S0),     [S0] --> [S0].
 state(S0, S1), [S1] --> [S0].
 
-%% Dispatching options:
+
+% Dispatching the option pipeline options:
+
+     /***************************
+		 *      PREPROCESSING       *
+		 ***************************/
 
 opt_cased(true)  --> [].
 opt_cased(false) --> state(Text, LowerCodes),
@@ -194,8 +202,10 @@ opt_cased(false) --> state(Text, LowerCodes),
         string_codes(LowerStr, LowerCodes)
     }.
 
-tokenize_text --> state(Text, Tokenized),
-    { phrase(tokens(Tokenized), Text) }.
+
+     /***************************
+		 *      POSTPROCESSING      *
+		 ***************************/
 
 opt_spaces(true)  --> [].
 opt_spaces(false) --> state(T0, T1),
@@ -217,11 +227,8 @@ opt_pack(false) --> [].
 opt_pack(true)  --> state(T0, T1),
     { phrase(pack_tokens(T1), T0) }.
 
-		 /*******************************
-		 *      POST_PROCESSING		*
-		 *******************************/
 
-%% Convert tokens to alternative representations.
+% Convert tokens to alternative representations.
 token_to(_, number(X), number(X)) :- !.
 token_to(Type, Token, Converted) :-
     ( Type == strings -> Conversion = inverse(string_codes)
@@ -232,8 +239,11 @@ token_to(Type, Token, Converted) :-
     call_into_term(Conversion, Token, Converted).
 
 
-%% Packing repeating tokens
-%
+     /***********************************
+		 *      POSTPROCESSING HELPERS      *
+		 ***********************************/
+
+% Packing repeating tokens
 pack_tokens([T])    --> pack_token(T).
 pack_tokens([T|Ts]) --> pack_token(T), pack_tokens(Ts).
 
@@ -247,11 +257,15 @@ pack(X, Count, Total)      --> [X], { succ(Count, NewCount) },
                                pack(X, NewCount, Total).
 
 
+     /**************************
+		 *      TOKENIZATION       *
+		 **************************/
 
-		 /*******************************
-		 *        PARSING               *
-		 *******************************/
+tokenize_text --> state(Text, Tokenized),
+                  { phrase(tokens(Tokenized), Text) }.
 
+
+% PARSING
 
 tokens([T])    --> token(T), eos, !.
 tokens([T|Ts]) --> token(T), tokens(Ts).
@@ -292,6 +306,8 @@ nascii(C)        --> [C], {C > 127}.
 ' ' --> space.
 ' ' --> space, ' '.
 
+
+% Any
 ... --> [].
 ... --> [_], ... .
 
