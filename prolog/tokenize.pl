@@ -273,15 +273,17 @@ tokens([T|Ts]) --> token(T), tokens(Ts).
 % NOTE for debugging
 % tokens(_)   --> {length(L, 200)}, L, {format(L)}, halt, !.
 
+token(string(S))   --> string(S).
 token(number(N))   --> number(N), !.
+
 token(word(W))     --> word(W), eos, !.
 token(word(W)),` ` --> word(W), ` `.
 token(word(W)), C  --> word(W), (punct(C) ; cntrl(C) ; nasciis(C)).
+
 token(spc(S))      --> spc(S).
 token(punct(P))    --> punct(P).
 token(cntrl(C))    --> cntrl(C).
 token(other(O))    --> nasciis(O).
-
 
 spc(` `) --> ` `.
 
@@ -289,6 +291,27 @@ sep --> ' '.
 sep --> eos, !.
 
 word(W) --> csyms(W).
+
+% TODO Make strings optional
+% TODO Make open and close brackets configurable
+string(S) --> string(`"`, `"`, S).
+string(OpenBracket, CloseBracket, S) --> string_start(OpenBracket, CloseBracket, S).
+
+% A string starts when we encounter an OpenBracket
+string_start(OpenBracket, CloseBracket, Cs) -->
+    OpenBracket, string_content(CloseBracket, Cs).
+
+% String content is everything up until we hit a CloseBracket
+string_content(CloseBracket, []) --> CloseBracket, !.
+% String content includes any character that isn't a CloseBracket or an escape.
+string_content(CloseBracket, [C|Cs]) -->
+    [C],
+    {[C] \= CloseBracket, [C] \= `\\`},
+    string_content(CloseBracket, Cs).
+% String content includes any character following an escape, but not the escape
+string_content(CloseBracket, [C|Cs]) -->
+    escape, [C],
+    string_content(CloseBracket, Cs).
 
 csyms([L])    --> csym(L).
 csyms([L|Ls]) --> csym(L), csyms(Ls).
@@ -306,6 +329,7 @@ nascii(C)        --> [C], {C > 127}.
 ' ' --> space.
 ' ' --> space, ' '.
 
+escape --> `\\`.
 
 % Any
 ... --> [].

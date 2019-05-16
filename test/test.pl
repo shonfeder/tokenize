@@ -24,6 +24,8 @@ test('Goodbye, Tokenize!',
     Expected = "Goodbye, Tokenize!".
 
 
+% NUMBERS
+
 test('tokenize 7.0',
      [true(Actual == Expected)]
     ) :-
@@ -49,5 +51,38 @@ test('untokenize 6.3 in other stuff',
     untokenize([word(hi), number(6.3)], Actual),
     Expected = `hi6.3`.
 
+
+% STRINGS
+
+test('Extracts a string',
+     [true(Actual == Expected)]
+    ) :-
+    tokenize("\"a string\"", Actual),
+    Expected = [string('a string')].
+
+test('Extracts a string among other stuff',
+     [true(Actual == Expected)]
+    ) :-
+    tokenize("Some other \"a string\" stuff", Actual),
+    Expected = [word(some),spc(' '),word(other),spc(' '),string('a string'),spc(' '),word(stuff)].
+
+test("Extracts a string that includes escaped brackets",
+     [true(Actual == Expected)]
+    ) :-
+    tokenize(`"a \\"string\\""`, Actual),
+    Expected = [string('a "string"')].
+
+test("Extracts a string that includes a doubly nested string",
+     [true(Actual == Expected)]
+    ) :-
+    tokenize(`"a \\"sub \\\\\\"string\\\\\\"\\""`, Actual),
+    Expected = [string('a "sub \\"string\\""')].
+
+test("Untokenizes string things",
+     [true(Actual == Expected)]
+    ) :-
+    untokenize([string('some string')], ActualCodes),
+    string_codes(Actual, ActualCodes),
+    Expected = "\"some string\"".
 
 :- end_tests(tokenize).
