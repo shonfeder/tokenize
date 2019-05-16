@@ -48,23 +48,23 @@ tokenize(Text, Tokens) :-
 %
 %   A token is one of:
 %
-%   * a word (contiguous alpha-numeric chars): `word(W)`
-%   * a punctuation mark (determined by `char_type(C, punct)`): `punct(P)`
-%   * a control character (determined by `char_typ(C, cntrl)`): `cntrl(C)`
-%   * a space ( == ` `): `spc(S)`.
+%* a word (contiguous alpha-numeric chars): `word(W)`
+%* a punctuation mark (determined by `char_type(C, punct)`): `punct(P)`
+%* a control character (determined by `char_typ(C, cntrl)`): `cntrl(C)`
+%* a space ( == ` `): `spc(S)`.
 %
 %  Valid options are:
 %
-%   * cased(+bool)  : Determines whether tokens perserve cases of the source text.
-%   * spaces(+bool) : Determines whether spaces are represted as tokens
+%* cased(+bool)  : Determines whether tokens perserve cases of the source text.
+%* spaces(+bool) : Determines whether spaces are represted as tokens
 %     or discarded.
-%   * cntrl(+bool)  : Determines whether control characters are represented
+%* cntrl(+bool)  : Determines whether control characters are represented
 %     as tokens or discarded.
-%   * punct(+bool)  : Determines whether punctuation characters are represented
+%* punct(+bool)  : Determines whether punctuation characters are represented
 %     as tokens or discarded.
-%   * to(+one_of([strings,atoms,chars,codes])) : Determines the
+%* to(+one_of([strings,atoms,chars,codes])) : Determines the
 %      representation format used for the tokens.
-%   * pack(+bool) :   Determines whether tokens are packed or repeated.
+%* pack(+bool) :   Determines whether tokens are packed or repeated.
 
 % TODO is it possible to achieve the proper semidet  without the cut?
 % Annie sez some parses are ambiguous, not even sure the cut should be
@@ -190,9 +190,9 @@ state(S0, S1), [S1] --> [S0].
 
 % Dispatching the option pipeline options:
 
-     /***************************
-		 *      PREPROCESSING       *
-		 ***************************/
+/***************************
+*      PREPROCESSING       *
+***************************/
 
 opt_cased(true)  --> [].
 opt_cased(false) --> state(Text, LowerCodes),
@@ -203,9 +203,9 @@ opt_cased(false) --> state(Text, LowerCodes),
     }.
 
 
-     /***************************
-		 *      POSTPROCESSING      *
-		 ***************************/
+/***************************
+*      POSTPROCESSING      *
+***************************/
 
 opt_spaces(true)  --> [].
 opt_spaces(false) --> state(T0, T1),
@@ -239,9 +239,9 @@ token_to(Type, Token, Converted) :-
     call_into_term(Conversion, Token, Converted).
 
 
-     /***********************************
-		 *      POSTPROCESSING HELPERS      *
-		 ***********************************/
+/***********************************
+*      POSTPROCESSING HELPERS      *
+***********************************/
 
 % Packing repeating tokens
 pack_tokens([T])    --> pack_token(T).
@@ -257,9 +257,9 @@ pack(X, Count, Total)      --> [X], { succ(Count, NewCount) },
                                pack(X, NewCount, Total).
 
 
-     /**************************
-		 *      TOKENIZATION       *
-		 **************************/
+/**************************
+*      TOKENIZATION       *
+**************************/
 
 tokenize_text --> state(Text, Tokenized),
                   { phrase(tokens(Tokenized), Text) }.
