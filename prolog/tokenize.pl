@@ -300,19 +300,20 @@ string(OpenBracket, CloseBracket, S) --> string_start(OpenBracket, CloseBracket,
 
 % A string starts when we encounter an OpenBracket
 string_start(OpenBracket, CloseBracket, Cs) -->
-    OpenBracket, string_content(CloseBracket, Cs).
+    OpenBracket, string_content(OpenBracket, CloseBracket, Cs).
 
 % String content is everything up until we hit a CloseBracket
-string_content(CloseBracket, []) --> CloseBracket, !.
+string_content(_OpenBracket, CloseBracket, []) --> CloseBracket, !.
+% String content includes a bracket following an escape, but not the escape
+string_content(OpenBracket, CloseBracket, [C|Cs]) -->
+    escape, (CloseBracket | OpenBracket),
+    {[C] = CloseBracket},
+    string_content(OpenBracket, CloseBracket, Cs).
 % String content includes any character that isn't a CloseBracket or an escape.
-string_content(CloseBracket, [C|Cs]) -->
+string_content(OpenBracket, CloseBracket, [C|Cs]) -->
     [C],
-    {[C] \= CloseBracket, [C] \= `\\`},
-    string_content(CloseBracket, Cs).
-% String content includes any character following an escape, but not the escape
-string_content(CloseBracket, [C|Cs]) -->
-    escape, [C],
-    string_content(CloseBracket, Cs).
+    {[C] \= CloseBracket},
+    string_content(OpenBracket, CloseBracket, Cs).
 
 csyms([L])    --> csym(L).
 csyms([L|Ls]) --> csym(L), csyms(Ls).

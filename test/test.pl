@@ -54,6 +54,30 @@ test('untokenize 6.3 in other stuff',
 
 % STRINGS
 
+test('Tokenizing the empty strings',
+     [true(Actual == Expected)]
+    ) :-
+    tokenize(`""`, Actual),
+    Expected = [string('')].
+
+test('Untokenizing an empty string',
+     [true(Actual == Expected)]
+    ) :-
+    untokenize([string('')], Actual),
+    Expected = `""`.
+
+test('Tokenizing a string with just two escapes',
+     [true(Actual == Expected)]
+    ) :-
+    tokenize(`"\\\\"`, Actual),
+    Expected = [string('\\\\')].
+
+test('Untokenizing a string with just two characters',
+     [true(Actual == Expected)]
+    ) :-
+    untokenize([string('aa')], Actual),
+    Expected = `"aa"`.
+
 test('Extracts a string',
      [true(Actual == Expected)]
     ) :-
@@ -72,10 +96,16 @@ test("Extracts a string that includes escaped brackets",
     tokenize(`"a \\"string\\""`, Actual),
     Expected = [string('a "string"')].
 
+test("Tokenization preserves escaped characters",
+     [true(Actual == Expected)]
+    ) :-
+    tokenize(`"\\tLine text\\n"`, Actual),
+    Expected = [string('\\tline text\\n')].
+
 test("Extracts a string that includes a doubly nested string",
      [true(Actual == Expected)]
     ) :-
-    tokenize(`"a \\"sub \\\\\\"string\\\\\\"\\""`, Actual),
+    tokenize(`"a \\"sub \\\\"string\\\\"\\""`, Actual),
     Expected = [string('a "sub \\"string\\""')].
 
 test("Untokenizes string things",
