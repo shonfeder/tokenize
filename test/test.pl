@@ -81,13 +81,13 @@ test('Untokenizing a string with just two characters',
 test('Extracts a string',
      [true(Actual == Expected)]
     ) :-
-    tokenize("\"a string\"", Actual),
+    tokenize(`"a string"`, Actual),
     Expected = [string('a string')].
 
 test('Extracts a string among other stuff',
      [true(Actual == Expected)]
     ) :-
-    tokenize("Some other \"a string\" stuff", Actual),
+    tokenize(`Some other "a string" stuff`, Actual),
     Expected = [word(some),spc(' '),word(other),spc(' '),string('a string'),spc(' '),word(stuff)].
 
 test("Extracts a string that includes escaped brackets",
@@ -111,8 +111,7 @@ test("Extracts a string that includes a doubly nested string",
 test("Untokenizes string things",
      [true(Actual == Expected)]
     ) :-
-    untokenize([string('some string')], ActualCodes),
-    string_codes(Actual, ActualCodes),
-    Expected = "\"some string\"".
+    untokenize([string('some string')], Actual),
+    Expected = `"some string"`.
 
 :- end_tests(tokenize).
