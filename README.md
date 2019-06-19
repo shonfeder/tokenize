@@ -1,4 +1,4 @@
-# `pack(tokenize)`
+# `pack(tokenize) :-`
 
 A modest tokenization library for SWI-Prolog, seeking a balance between
 simplicity and flexibility.
