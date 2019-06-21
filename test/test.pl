@@ -7,6 +7,8 @@
    asserta(user:file_search_path(package, PackageDir)).
 
 :- use_module(package(tokenize)).
+:- use_module(package(tokenize_opts)).
+
 :- begin_tests(tokenize).
 
 test('Hello, Tokenize!',
@@ -23,6 +25,23 @@ test('Goodbye, Tokenize!',
     string_codes(Actual, Codes),
     Expected = "Goodbye, Tokenize!".
 
+
+% OPTION PROCESSING
+
+test('process_options/3 throws on invalid options') :-
+    catch(
+        process_options([invalid(true)], _, _),
+        invalid_options_given([invalid(true)]),
+        true
+    ).
+
+test('process_options/3 sets valid options in opt records') :-
+    Options = [cased(false), spaces(false)],
+    process_options(Options, PreOpts, PostOpts),
+    preopts_data(cased, PreOpts, Cased),
+    postopts_data(spaces, PostOpts, Spaces),
+    assertion(cased:Cased == cased:false),
+    assertion(spaces:Spaces == spaces:false).
 
 % NUMBERS
 

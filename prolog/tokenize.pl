@@ -24,9 +24,11 @@ It also provides a simple predicate for reading lists of tokens back into
 text.
 
 */
-:- use_module(library(dcg/basics), [eos//0, number//1]).
 
-% Ensure we interpret backs as enclosing code lists in this module.
+:- use_module(library(dcg/basics), [eos//0, number//1]).
+:- use_module(tokenize_opts).
+
+% Ensure we interpret back ticks as enclosing code lists in this module.
 :- set_prolog_flag(back_quotes, codes).
 
 %% tokenize(+Text:list(code), -Tokens:list(term)) is semidet.
@@ -67,14 +69,17 @@ tokenize(Text, Tokens) :-
 %   * to(+one_of([strings,atoms,chars,codes])) : Determines the representation
 %         format used for the tokens.
 
-% TODO is it possible to achieve the proper semidet  without the cut?
+% TODO is it possible to achieve the proper semidet without the cut?
 % Annie sez some parses are ambiguous, not even sure the cut should be
 % there
 
-tokenize(Text, Tokens, Options) :-
+tokenize(Text, ProcessedTokens, Options) :-
     must_be(nonvar, Text),
     string_codes(Text, Codes),
-    phrase(process_options, [Options-Codes], [Options-Tokens]),
+    process_options(Options, PreOpts, PostOpts),
+    preprocess(PreOpts, Codes, ProcessedCodes),
+    phrase(tokens(Tokens), ProcessedCodes),
+    postprocess(PostOpts, Tokens, ProcessedTokens),
     !.
 
 %% untokenize(+Tokens:list(term), -Untokens:list(codes)) is semidet.
@@ -123,111 +128,59 @@ tokenize_file(File, Tokens, Options) :-
     read_file_to_codes(File, Codes, [encoding(utf8)]),
     tokenize(Codes, Tokens, Options).
 
-% PROCESSING OPTIONS
-%
-%   NOTE: This way of processing options is probably stupid.
-%   I will correct/improve/rewrite it if there is ever a good
-%   reason to. But for now, it works.
-%
-%   TODO: Throw exception if invalid options are passed in.
-%   At the moment it just fails.
 
-%% Dispatches dcgs by option-list functors, with default values.
-process_options -->
-    % Preprocessing
-    opt(cased,  false),
-    % Tokenization
-    non_opt(tokenize_text),
-    % Postprocessing
-    opt(spaces, true),
-    opt(cntrl,  true),
-    opt(punct,  true),
-    opt(to,     atoms),
-    opt(pack,   false).
+/***********************************
+*      {PRE,POST}-PROCESSING HELPERS      *
+***********************************/
 
-%% opt(+OptionFunctor:atom, DefaultValue:nonvar)
-%
-%   If dcg functor is identical to the option name with 'opt_' prefixed,
-%   then the dcg functor can be omitted.
-%
-%
+preprocess(PreOpts, Codes, ProcessedCodes) :-
+    preopts_data(cased, PreOpts, Cased),
+    DCG_Rules = (
+        preprocess_case(Cased)
+    ),
+    phrase(process_dcg_rules(DCG_Rules, ProcessedCodes), Codes).
 
-opt(Opt, Default) -->
-    { atom_concat('opt_', Opt, Opt_DCG) },
-    opt(Opt, Default, Opt_DCG).
-
-%% opt(+OptionFunctor:atom, +DefaultValue:nonvar, +DCGFunctor:atom).
-opt(Opt, Default, DCG) -->
-    state(Opts-Text0, Text0),
-    {
-        pad(Opt, Selection, Opt_Selection),
-        option(Opt_Selection, Opts, Default),
-        DCG_Selection =.. [DCG, Selection]
-    },
-    DCG_Selection,
-    state(Text1, Opts-Text1).
-%% This ugly bit should be dispensed with...
-opt(Opt, Default, _) -->
-    state(Opts-_),
-    {
-        var(Default), \+ option(Opt, Opts),
-        writeln("Unknown options passed to opt//3: "),
-        write(Opt)
-    }.   % TODO use print_message for this
-
-%% non_opt(+DCG).
-%
-%   Non optional dcg to dispatch. Passes the object of concern
-%   without the options list, then recovers option list.
-
-non_opt(DCG) -->
-    state(Opts-Text0, Text0),
-    DCG,
-    state(Text1, Opts-Text1).
-
-state(S0),     [S0] --> [S0].
-state(S0, S1), [S1] --> [S0].
+postprocess(PostOpts, Tokens, ProcessedTokens) :-
+    postopts_data(spaces, PostOpts, Spaces),
+    postopts_data(cntrl, PostOpts, Cntrl),
+    postopts_data(punct, PostOpts, Punct),
+    postopts_data(to, PostOpts, To),
+    postopts_data(pack, PostOpts, Pack),
+    DCG_Rules = (
+        keep_token(space(_), Spaces),
+        keep_token(cntrl(_), Cntrl),
+        keep_token(punct(_), Punct),
+        convert_token(To)
+    ),
+    phrase(process_dcg_rules(DCG_Rules, PrePackedTokens), Tokens),
+    (Pack
+    -> phrase(pack_tokens(ProcessedTokens), PrePackedTokens)
+    ;  ProcessedTokens = PrePackedTokens
+    ).
 
 
-% Dispatching the option pipeline options:
+/***********************************
+*      POSTPROCESSING HELPERS      *
+***********************************/
 
-/***************************
-*      PREPROCESSING       *
-***************************/
+% Process a stream through a pipeline of DCG rules
+process_dcg_rules(_, []) --> eos, !.
+process_dcg_rules(DCG_Rules, []) --> DCG_Rules, eos, !.
+process_dcg_rules(DCG_Rules, [C|Cs]) -->
+    DCG_Rules,
+    [C],
+    process_dcg_rules(DCG_Rules, Cs).
 
-opt_cased(true)  --> [].
-opt_cased(false) --> state(Text, LowerCodes),
-    {
-        text_to_string(Text, Str),
-        string_lower(Str, LowerStr),
-        string_codes(LowerStr, LowerCodes)
-    }.
+preprocess_case(true), [C] --> [C].
+preprocess_case(false), [CodeOut] --> [CodeIn],
+    { to_lower(CodeIn, CodeOut) }.
 
+keep_token(_, true), [T] --> [T].
+keep_token(Token, false) --> [Token].
+keep_token(Token, false), [T] --> [T], {T \= Token}.
 
-/***************************
-*      POSTPROCESSING      *
-***************************/
-
-opt_spaces(true)  --> [].
-opt_spaces(false) --> state(T0, T1),
-    { exclude( =(spc(_)), T0, T1) }.
-
-opt_cntrl(true)  --> [].
-opt_cntrl(false) --> state(T0, T1),
-    { exclude( =(cntrl(_)), T0, T1) }.
-
-opt_punct(true)  --> [].
-opt_punct(false) --> state(T0, T1),
-    { exclude( =(punct(_)), T0, T1) }.
-
-opt_to(codes) --> [].
-opt_to(Type)  --> state(CodeTokens, Tokens),
-    { maplist(token_to(Type), CodeTokens, Tokens) }.
-
-opt_pack(false) --> [].
-opt_pack(true)  --> state(T0, T1),
-    { phrase(pack_tokens(T1), T0) }.
-
+convert_token(Type), [Converted] --> [Token],
+    {token_to(Type, Token, Converted)}.
 
 % Convert tokens to alternative representations.
 token_to(_, number(X), number(X)) :- !.
@@ -238,11 +191,6 @@ token_to(Type, Token, Converted) :-
     ; Type == codes   -> Conversion = string_codes
     ),
     call_into_term(Conversion, Token, Converted).
-
-
-/***********************************
-*      POSTPROCESSING HELPERS      *
-***********************************/
 
 % Packing repeating tokens
 pack_tokens([T])    --> pack_token(T).
@@ -275,6 +223,8 @@ tokens([T|Ts]) --> token(T), tokens(Ts).
 % tokens(_)   --> {length(L, 200)}, L, {format(L)}, halt, !.
 
 token(string(S))   --> string(S).
+
+% TODO Make numbers optional
 token(number(N))   --> number(N), !.
 
 token(word(W))     --> word(W), eos, !.
