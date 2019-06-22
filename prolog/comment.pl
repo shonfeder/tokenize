@@ -1,44 +1,60 @@
-/*
-module(tokenize(comment)
-       [comment/2,
-        comment_rec/2,
-        comment_token/2,
-        comment_token_rec/2]).
+:- module(comment,
+          [comment//2,
+           comment_rec//2,
+           comment_token//3,
+           comment_token_rec//3]).
+
+/** <module> Tokenizing comments
+This module defines matchers for comments used by the tokenize module. (Note
+that we will use matcher as a name for dcg rules that match parts of the codes
+list).
+
+@author Stefan Israelsson Tampe
+@license LGPL v2 or later
+
+Interface Note:
+Start and End matchers is a matcher (dcg rule) that is either evaluated with no
+extra argument (--> call(StartMatcher)) and it will just match it's token or it
+can have an extra argument producing the codes matched by the matcher e.g. used
+as --> call(StartMatcher,MatchedCodes). The matchers match start and end codes
+of the comment, the 2matcher type will represent these kinds of dcg rules or
+matchers 2 is because they support two kinds of arguments to the dcg rules.
+For examples
+see:
+
+  @see tests/test_comments.pl
+
+The matchers predicates exported and defined are:
+
+ comment(+Start:2matcher,+End:2matcher)
+   - anonymously match a non recursive comment
+
+ comment_rec(+Start:2matcher,+End:2matcher,2matcher)
+   - anonymously match a recursive comment
+
+ coment_token(+Start:2matcher,+End:2matcher,-Matched:list(codes))
+   - match an unrecursive comment outputs the matched sequence used
+     for building a resulting comment token
+
+ coment_token_rec(+Start:2matcher,+End:2matcher,-Matched:list(codes))
+   - match an recursive comment outputs the matched sequence used
+     for building a resulting comment token
 */
 
-dcgtrue(U,U).
 
-id([X|L]) --> [X],id(L).
-id([]) --> dcgtrue.
-id([X|L],[X|LL]) --> [X],id(L,LL).
-id([],[]) --> dcgtrue.
 
-tr(S,SS) :-
-    atom(S) ->
-        (
-            atom_codes(S,C),
-            SS=id(C)
-        );
-    SS=S.
+%% comment(+Start:2matcher,+End:2matcher)
+%    non recursive non tokenizing matcher
 
-eol     --> {atom_codes('\n',E)},id(E).
-eol(HS) --> {atom_codes('\n',E)},id(E,HS).
- 
 comment_body(E) --> call(E),!.
 comment_body(E) --> [_],comment_body(E).
-comment_body(_) --> [].
-                           
-comment(S,E) -->
-    {
-        tr(S,SS),
-        tr(E,EE)
-    },
-    call(SS),
-    comment_body(EE).
 
-line_comment(S) -->
-    {tr(S,SS)},
-    comment_body(SS,eol).
+comment(S,E) -->
+    call(S),
+    comment_body(E).
+
+%% comment_token(+Start:2matcher,+End:2matcher,-Matched:list(codes))
+%    non recursive tokenizing matcher
 
 comment_body_token(E,Text) -->
     call(E,HE),!,
@@ -48,57 +64,45 @@ comment_body_token(E,[X|L]) -->
     [X],
     comment_body_token(E,L).
 
-comment_body_token(_,[]) --> [].
-                           
 comment_token(S,E,Text) -->
-    {
-        tr(S,SS),
-        tr(E,EE)
-    },
-    call(SS,HS),
-    {append(HS,T,Text)},
-    comment_body_token(EE,T).
-
-line_comment_token(S,Text) -->
-    {tr(S,SS)},
-    comment_body_token(SS,eol,Text).
-
-comment_body_rec_cont(S,E,Cont,HE,Text) -->
-    {append(HE,T,Text)},
-    comment_body_token_rec(S,E,Cont,T).
-
-comment_body_rec_start(HE,Text) -->
-    {append(HE,[],Text)}.
-
-comment_body_token_rec(_,E,Cont,Text) -->
-    call(E,HE),
-    call(Cont,HE,Text).
-
-comment_body_token_rec(S,E,Cont,Text) -->
     call(S,HS),
     {append(HS,T,Text)},
-    comment_body_token_rec(S,E,comment_body_rec_cont(S,E,Cont),T).
+    comment_body_token(E,T).
+
+%% comment_token_rec(+Start:2matcher,+End:2matcher,-Matched:list(codes))
+%   recursive tokenizing matcher
+
+% Use this as the initial continuation, will just tidy up the matched result
+% by ending the list with [].
+comment_body_rec_start(_,_,[]).
+
+comment_body_token_rec(_,E,Cont,Text) -->
+    call(E,HE),!,
+    {append(HE,T,Text)},
+    call(Cont,T).
+
+comment_body_token_rec(S,E,Cont,Text) -->
+    call(S,HS),!,
+    {append(HS,T,Text)},
+    comment_body_token_rec(S,E,comment_body_token_rec(S,E,Cont),T).
 
 comment_body_token_rec(S,E,Cont,[X|L]) -->
     [X],
     comment_body_token_rec(S,E,Cont,L).
 
-comment_body_token_rec(_,_,_,_,_,[]) --> dcgtrue.
-
 comment_token_rec(S,E,Text) -->
-    {
-        tr(S,SS),
-        tr(E,EE)
-    },
-    call(SS,HS),
+    call(S,HS),
     {append(HS,T,Text)},
-    comment_body_token_rec(SS,EE,comment_body_rec_start,T).
+    comment_body_token_rec(S,E,comment_body_rec_start,T).
+
+%% comment_rec(+Start:2matcher,+End:2matcher)
+%    recursive non tokenizing matcher
 
 comment_body_rec(_,E) -->
-    call(E).
+    call(E),!.
 
 comment_body_rec(S,E) -->
-    call(S),
+    call(S),!,
     comment_body_rec(S,E),
     comment_body_rec(S,E).
 
@@ -106,51 +110,6 @@ comment_body_rec(S,E) -->
     [_],
     comment_body_rec(S,E).
 
-comment_body_rec(_,_).
-
 comment_rec(S,E) -->
-    {
-        tr(S,SS),
-        tr(E,EE)
-    },
-    call(SS),
-    comment_body_rec(SS,EE).
-
-test(Tok,S,U) :-
-    atom_codes(S,SS),
-    call_dcg(Tok,SS,U).
-
-test_comment(S) :-
-    test(comment('<','>'),S,[]).
-
-test_comment_rec(S) :-
-    test(comment_rec('<','>'),S,[]).
-
-test_comment_token(S,T) :-
-    test(comment_token('<','>',TT),S,[]),
-    atom_codes(T,TT).
-
-test_comment_token_rec(S,T) :-
-    test(comment_token_rec('<','>',TT),S,[]),
-    atom_codes(T,TT).
-
-tester([]).
-tester([X|L]) :-
-    write_term(test(X),[]),
-    (
-        call(X) -> write(' ... OK') ; write(' ... FAIL')
-    ),
-    nl,
-    tester(L).
-
-
-/*
-tester(
-    [test_comment('<alla>'),
-     test_comment_rec('<alla<balla>>'),
-     test_comment_token('<alla>','<alla>'),
-     test_comment_token_rec('<alla<balla>>','<alla<balla>>')]).
-*/
-
-    
-        
+    call(S),
+    comment_body_rec(S,E).
