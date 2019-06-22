@@ -28,19 +28,27 @@ test('Goodbye, Tokenize!',
 
 % OPTION PROCESSING
 
-test('process_options/3 throws on invalid options') :-
+test('process_options/4 throws on invalid options') :-
     catch(
-        process_options([invalid(true)], _, _),
+        process_options([invalid(true)], _, _, _),
         invalid_options_given([invalid(true)]),
         true
     ).
 
-test('process_options/3 sets valid options in opt records') :-
-    Options = [cased(false), spaces(false)],
-    process_options(Options, PreOpts, PostOpts),
+test('process_options/4 sets valid options in opt records') :-
+    Options = [
+        cased(false),   % non-default preopt
+        strings(false), % non-default tokenopt
+        spaces(false)   % non-default postopt
+    ],
+    process_options(Options, PreOpts, TokenOpts, PostOpts),
+    % Fetch the options that were set
     preopts_data(cased, PreOpts, Cased),
+    tokenopts_data(strings, TokenOpts, Strings),
     postopts_data(spaces, PostOpts, Spaces),
+    % These compounds are just ensure informative output on failure
     assertion(cased:Cased == cased:false),
+    assertion(strings:Strings == strings:false),
     assertion(spaces:Spaces == spaces:false).
 
 % NUMBERS
@@ -57,7 +65,6 @@ test('untokenize 6.3',
     untokenize([number(6.3)], Actual),
     Expected = `6.3`.
 
-
 test('tokenize number in other stuff',
      [true(Actual == Expected)]
     ) :-
@@ -69,6 +76,12 @@ test('untokenize 6.3 in other stuff',
     ) :-
     untokenize([word(hi), number(6.3)], Actual),
     Expected = `hi6.3`.
+
+test('can disable number tokens',
+     [true(Actual == Expected)]
+    ) :-
+    tokenize("hi 7.0 x", Actual, [numbers(false)]),
+    Expected = [word(hi), spc(' '), word('7'), punct('.'), word('0'), spc(' '), word(x)].
 
 
 % STRINGS
@@ -109,25 +122,31 @@ test('Extracts a string among other stuff',
     tokenize(`Some other "a string" stuff`, Actual),
     Expected = [word(some),spc(' '),word(other),spc(' '),string('a string'),spc(' '),word(stuff)].
 
-test("Extracts a string that includes escaped brackets",
+test('Extracts a string that includes escaped brackets',
      [true(Actual == Expected)]
     ) :-
     tokenize(`"a \\"string\\""`, Actual),
     Expected = [string('a "string"')].
 
-test("Tokenization preserves escaped characters",
+test('Tokenization preserves escaped characters',
      [true(Actual == Expected)]
     ) :-
     tokenize(`"\\tLine text\\n"`, Actual),
     Expected = [string('\\tline text\\n')].
 
-test("Extracts a string that includes a doubly nested string",
+test('Extracts a string that includes a doubly nested string',
      [true(Actual == Expected)]
     ) :-
     tokenize(`"a \\"sub \\\\"string\\\\"\\""`, Actual),
     Expected = [string('a "sub \\"string\\""')].
 
-test("Untokenizes string things",
+test('can disable string tokens',
+     [true(Actual == Expected)]
+    ) :-
+    tokenize(`some "string".`, Actual, [numbers(false)]),
+    Expected = [word(some), spc(' '), string(string), punct('.')].
+
+test('Untokenizes string things',
      [true(Actual == Expected)]
     ) :-
     untokenize([string('some string')], Actual),

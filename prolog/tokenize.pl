@@ -76,9 +76,9 @@ tokenize(Text, Tokens) :-
 tokenize(Text, ProcessedTokens, Options) :-
     must_be(nonvar, Text),
     string_codes(Text, Codes),
-    process_options(Options, PreOpts, PostOpts),
+    process_options(Options, PreOpts, TokenOpts, PostOpts),
     preprocess(PreOpts, Codes, ProcessedCodes),
-    phrase(tokens(Tokens), ProcessedCodes),
+    phrase(tokens(TokenOpts, Tokens), ProcessedCodes),
     postprocess(PostOpts, Tokens, ProcessedTokens),
     !.
 
@@ -216,25 +216,28 @@ tokenize_text --> state(Text, Tokenized),
 
 % PARSING
 
-tokens([T])    --> token(T), eos, !.
-tokens([T|Ts]) --> token(T), tokens(Ts).
+tokens(Opts, [T])    --> token(Opts, T), eos, !.
+tokens(Opts, [T|Ts]) --> token(Opts, T), tokens(Opts, Ts).
 
 % NOTE for debugging
 % tokens(_)   --> {length(L, 200)}, L, {format(L)}, halt, !.
 
-token(string(S))   --> string(S).
+token(Opts, string(S)) -->
+    { tokenopts_data(strings, Opts, true) },
+    string(S).
 
-% TODO Make numbers optional
-token(number(N))   --> number(N), !.
+token(Opts, number(N)) -->
+    { tokenopts_data(numbers, Opts, true) },
+    number(N), !.
 
-token(word(W))     --> word(W), eos, !.
-token(word(W)),` ` --> word(W), ` `.
-token(word(W)), C  --> word(W), (punct(C) ; cntrl(C) ; nasciis(C)).
+token(_Opts, word(W))     --> word(W), eos, !.
+token(_Opts, word(W)),` ` --> word(W), ` `.
+token(_Opts, word(W)), C  --> word(W), (punct(C) ; cntrl(C) ; nasciis(C)).
 
-token(spc(S))      --> spc(S).
-token(punct(P))    --> punct(P).
-token(cntrl(C))    --> cntrl(C).
-token(other(O))    --> nasciis(O).
+token(_Opts, spc(S))   --> spc(S).
+token(_Opts, punct(P)) --> punct(P).
+token(_Opts, cntrl(C)) --> cntrl(C).
+token(_Opts, other(O)) --> nasciis(O).
 
 spc(` `) --> ` `.
 
@@ -243,7 +246,6 @@ sep --> eos, !.
 
 word(W) --> csyms(W).
 
-% TODO Make strings optional
 % TODO Make open and close brackets configurable
 string(S) --> string(`"`, `"`, S).
 string(OpenBracket, CloseBracket, S) --> string_start(OpenBracket, CloseBracket, S).
