@@ -42,7 +42,7 @@ design philosophy and principles.
 
     % experiment
     ?- tokenize("Foo bar baz", Tokens).
-    Tokens = [word(foo), spc(' '), word(bar), spc(' '), word(baz)].
+    Tokens = [word(foo), space(' '), word(bar), space(' '), word(baz)].
 
     % reload the module when you make changes to the source code
     ?- make.

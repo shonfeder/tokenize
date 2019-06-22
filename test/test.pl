@@ -15,12 +15,12 @@ test('Hello, Tokenize!',
      [true(Actual == Expected)]
     ) :-
     tokenize("Hello, Tokenize!", Actual),
-    Expected = [word(hello),punct(','),spc(' '),word(tokenize),punct(!)].
+    Expected = [word(hello),punct(','),space(' '),word(tokenize),punct(!)].
 
 test('Goodbye, Tokenize!',
      [true(Actual == Expected)]
     ) :-
-    Tokens = [word('Goodbye'),punct(','),spc(' '),word('Tokenize'),punct('!')],
+    Tokens = [word('Goodbye'),punct(','),space(' '),word('Tokenize'),punct('!')],
     untokenize(Tokens, Codes),
     string_codes(Actual, Codes),
     Expected = "Goodbye, Tokenize!".
@@ -69,7 +69,7 @@ test('tokenize number in other stuff',
      [true(Actual == Expected)]
     ) :-
     tokenize("hi 7.0 x", Actual),
-    Expected = [word(hi), spc(' '), number(7.0), spc(' '), word(x)].
+    Expected = [word(hi), space(' '), number(7.0), space(' '), word(x)].
 
 test('untokenize 6.3 in other stuff',
      [true(Actual == Expected)]
@@ -81,7 +81,7 @@ test('can disable number tokens',
      [true(Actual == Expected)]
     ) :-
     tokenize("hi 7.0 x", Actual, [numbers(false)]),
-    Expected = [word(hi), spc(' '), word('7'), punct('.'), word('0'), spc(' '), word(x)].
+    Expected = [word(hi), space(' '), word('7'), punct('.'), word('0'), space(' '), word(x)].
 
 
 % STRINGS
@@ -120,7 +120,7 @@ test('Extracts a string among other stuff',
      [true(Actual == Expected)]
     ) :-
     tokenize(`Some other "a string" stuff`, Actual),
-    Expected = [word(some),spc(' '),word(other),spc(' '),string('a string'),spc(' '),word(stuff)].
+    Expected = [word(some),space(' '),word(other),space(' '),string('a string'),space(' '),word(stuff)].
 
 test('Extracts a string that includes escaped brackets',
      [true(Actual == Expected)]
@@ -144,7 +144,7 @@ test('can disable string tokens',
      [true(Actual == Expected)]
     ) :-
     tokenize(`some "string".`, Actual, [numbers(false)]),
-    Expected = [word(some), spc(' '), string(string), punct('.')].
+    Expected = [word(some), space(' '), string(string), punct('.')].
 
 test('Untokenizes string things',
      [true(Actual == Expected)]

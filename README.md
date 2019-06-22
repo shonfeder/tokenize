@@ -9,14 +9,14 @@ simplicity and flexibility.
 
 ```prolog
 ?- tokenize(`\tExample  Text.`, Tokens).
-Tokens = [cntrl('\t'), word(example), spc(' '), spc(' '), word(text), punct('.')]
+Tokens = [cntrl('\t'), word(example), space(' '), space(' '), word(text), punct('.')]
 
 ?- tokenize(`\tExample  Text.`, Tokens, [cntrl(false), pack(true), cased(true)]).
-Tokens = [word('Example', 1), spc(' ', 2), word('Text', 1), punct('.', 1)]
+Tokens = [word('Example', 1), space(' ', 2), word('Text', 1), punct('.', 1)]
 
 ?- tokenize(`\tExample  Text.`, Tokens), untokenize(Tokens, Text), format('~s~n', [Text]).
 	example  text.
-Tokens = [cntrl('\t'), word(example), spc(' '), spc(' '), word(text), punct('.')],
+Tokens = [cntrl('\t'), word(example), space(' '), space(' '), word(text), punct('.')],
 Text = [9, 101, 120, 97, 109, 112, 108, 101, 32|...]
 ```
 

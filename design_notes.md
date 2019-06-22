@@ -35,7 +35,7 @@ this result through a subsequent lexing pass.
 
 * We don't parse.
 * Every token generated is callable (i.e., an atom or compound).
-  * Example of an possible compound token: `spc(' ')`.
+  * Example of an possible compound token: `space(' ')`.
   * Example of a possible atom token: `escape`.
   tokenization need to return tokens represented with the same arity)
 * Users should be able to determine the kind of token by unification.
