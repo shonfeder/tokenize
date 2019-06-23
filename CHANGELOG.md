@@ -10,6 +10,12 @@ adheres to [Semantic Versioning][semantic-versioning].
 
 ## [unreleased]
 
+## [1.0.1]
+
+### Changed
+
+- Documentation updated for v1.0.0 options #46
+
 ## [1.0.0]
 
 ### Added
