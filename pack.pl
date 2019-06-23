@@ -1,7 +1,7 @@
 name(tokenize).
 title('A simple tokenization library').
 
-version('0.1.2').
+version('1.0.0').
 download('https://github.com/shonfeder/tokenize/release/*.zip').
 
 author('Shon Feder', 'shon.feder@gmail.com').
