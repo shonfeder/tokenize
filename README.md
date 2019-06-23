@@ -22,16 +22,40 @@ Text = [9, 101, 120, 97, 109, 112, 108, 101, 32|...]
 
 ## Description
 
-Module `tokenize` aims to provide a straightforward tool for tokenizing text into a simple format. It is the result of a learning exercise, and it is far from perfect. If there is sufficient interest from myself or anyone else, I'll try to improve it.
+Module `tokenize` provides a straightforward tool for
+[lexing](https://en.wikipedia.org/wiki/Lexical_analysis) text into a list of
+tokens. It supports several options to customize the kinds of tokens generated,
+but it errs on the side of simplicity over flexibility.
 
-It is packaged as an SWI-Prolog pack, available [here](http://www.swi-prolog.org/pack/list?p=tokenize). Install it into your SWI-Prolog system with the query
+`tokenize` is not a viable alternative to industrial strength lexer generators,
+but it is a useful tool if you need to lex some text into common tokens to ease
+your parsing needs.
+
+## Installation
+
+`tokenize` is packaged as an [SWI-Prolog pack](http://www.swi-prolog.org/pack/list?p=tokenize).
+Install it into your SWI-Prolog system by running the following query in the
+`swipl` top level:
 
 ```prolog
 ?- pack_install(tokenize).
 ```
 
-Please [visit the wiki](https://github.com/aBathologist/tokenize/wiki/tokenize.pl-options-and-examples) for more detailed instructions and examples, including a full list of options supported.
+Then answer `y` at the prompts.
+
+## Usage
+
+Import the library into your source files with the directive
+
+```prolog
+:- use_module(library(tokenize)).
+```
+
+Please see [the documentation](https://www.swi-prolog.org/pack/file_details/tokenize/prolog/tokenize.pl)
+and consult [the wiki](https://github.com/shonfeder/tokenize/wiki/tokenize.pl-options-and-examples)
+for more detailed instructions and examples, including a full list of supported options.
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+See the [CONTRIBUTING.md](https://github.com/shonfeder/tokenize/blob/develop/CONTRIBUTING.md)
+document.

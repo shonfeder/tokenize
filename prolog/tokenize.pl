@@ -8,7 +8,7 @@
 
 /** <module> tokenize
 
-This module offers a simple tokenizer with some basic options.
+This module offers a simple tokenizer with flexible options.
 
 @author Shon Feder
 @license <http://unlicense.org/>
@@ -16,13 +16,30 @@ This module offers a simple tokenizer with some basic options.
 Rational:
 
 tokenize_atom/2, in library(porter_stem), is inflexible, in that it doesn't
-allow for the preservation of white space or control characters, and
-it only tokenizes into a list of atoms. This library allows for options to
-include or exclude things like spaces and punctuation, and for packing tokens.
+allow for the preservation of white space or control characters, and it only
+tokenizes into a list of atoms.
 
-It also provides a simple predicate for reading lists of tokens back into
-text.
+The `tokenize` library is meant to be easy to use while allowing for relatively
+flexible input and output. Features include
 
+  * options for tokenization of spaces, numbers, strings, control characters and punctuation
+  * options to output packed tokens
+  * options to represent tokens in any of the common SWI-Prolog text formats
+  * option to preserve or ignore case
+  * a predicate to emit text given a list of tokens
+
+E.g.,
+
+==
+?- tokenize('Tokenizes: words,"strings", 1234.5\n', Tokens, [cased(true), spaces(false)]),
+|    untokenize(Tokens, Codes).
+Tokens = [word('Tokenizes'), punct(:), word(words), punct(','), string(strings), punct(','), number(1234.5), cntrl('\n')],
+Codes = "Tokenizes:words,"strings"...34.5
+".
+==
+
+`tokenize` is much more limited and much less performant than a lexer generator,
+but it is dead simple to use and flexible enough for many common use cases.
 */
 
 :- use_module(library(dcg/basics), [eos//0, number//1]).
@@ -31,43 +48,57 @@ text.
 % Ensure we interpret back ticks as enclosing code lists in this module.
 :- set_prolog_flag(back_quotes, codes).
 
-%% tokenize(+Text:list(code), -Tokens:list(term)) is semidet.
+%! tokenize(+Text:text, -Tokens:list(term)) is semidet.
 %
-%   @see tokenize/3 is called with an empty list of options: thus, with defaults.
+%   @see tokenize/3 when called with an empty list of options: thus, with defaults.
 
 % TODO: add support for unicode
 
 tokenize(Text, Tokens) :-
     tokenize(Text, Tokens, []).
 
-%% tokenize(+Text:list(code), -Tokens:list(term), +Options:list(term)) is semidet.
+%! tokenize(+Text:text, -Tokens:list(term), +Options:list(term)) is semidet.
 %
-%   True when Tokens is unified with a list of tokens representing the text from
-%   Text, according to the options specified in Options.
+%  True when Tokens is unified with a list of tokens representing the text from
+%  Text, according to the options specified in Options.
 %
-%   NOTE: this predicate currently fails if invalid option arguments are given
-%   and, worse, it succeeds silently if there are invalid option parameters.
+%  Each token in Tokens will be one of:
 %
-%   A token is one of:
+%   * word(W)
+%     Where W is comprised of contiguous alpha-numeric chars.
+%   * punct(P)
+%     Where char_type(P, punct).
+%   * cntrl(C)
+%     Where char_type(C, cntrl).
+%   * space(S)
+%     Where `S == ' '`.
+%   * number(N)
+%     Where number(N).
+%   * string(S)
+%     Where S was a sequence of bytes enclosed by double quotation marks.
 %
-%   * a word (contiguous alpha-numeric chars): `word(W)`
-%   * a punctuation mark (determined by `char_type(C, punct)`): `punct(P)`
-%   * a control character (determined by `char_typ(C, cntrl)`): `cntrl(C)`
-%   * a space ( == ` `): `space(S)`.
+%  Note that the above describes the default behavior, in which the token is
+%  represented as an `atom`. This representation can be changed by using the
+%  `to` option described below.
 %
-%   Valid options are:
+%  Valid Options are:
 %
-%   * cased(+bool) : Determines whether tokens perserve cases of the source
-%         text.
-%   * spaces(+bool) : Determines whether spaces are represted as tokens or
-%         discarded.
-%   * cntrl(+bool) : Determines whether control characters are represented as
-%         tokens or discarded.
-%   * punct(+bool) : Determines whether punctuation characters are represented
-%         as tokens or discarded.
-%   * pack(+bool)   : Determines whether tokens are packed or repeated.
-%   * to(+one_of([strings,atoms,chars,codes])) : Determines the representation
-%         format used for the tokens.
+%   * cased(+boolean)
+%     Determines whether tokens perserve cases of the source text. Defaults to `cased(false)`.
+%   * spaces(+boolean)
+%     Determines whether spaces are represted as tokens or discarded. Defaults to `spaces(true)`.
+%   * cntrl(+boolean)
+%     Determines whether control characters are represented as tokens or discarded. Defaults to `cntrl(true)`.
+%   * punct(+boolean)
+%     Determines whether punctuation characters are represented as tokens or discarded. Defaults to `punct(true)`.
+%   * numbers(+boolean)
+%     Determines whether the tokenizer represents and tags numbers. Defaults to `numbers(true)`.
+%   * strings(+boolean)
+%     Determines whether the tokenizer represents and tags strings. Defaults to `strings(true)`.
+%   * pack(+boolean)
+%     Determines whether tokens are packed or repeated. Defaults to `pack(false)`.
+%   * to(+one_of([strings,atoms,chars,codes]))
+%     Determines the representation format used for the tokens. Defaults to `to(atoms)`.
 
 % TODO is it possible to achieve the proper semidet without the cut?
 % Annie sez some parses are ambiguous, not even sure the cut should be
@@ -82,7 +113,36 @@ tokenize(Text, ProcessedTokens, Options) :-
     postprocess(PostOpts, Tokens, ProcessedTokens),
     !.
 
-%% untokenize(+Tokens:list(term), -Untokens:list(codes)) is semidet.
+non_tokens([T])    --> T.
+non_tokens([T|Ts]) --> T, non_tokens(Ts).
+
+%! tokenize_file(+File:atom, -Tokens:list(term)) is semidet.
+%
+%   @see tokenize_file/3 when called with an empty list of options: thus, with defaults.
+%
+
+% Note: does not use phrase_from_file/3, thus not lazy or transparent
+% This choice was made so that tokenize_file will work with remotely
+% accessed files.
+% TODO: make this configurable, so it can be used in the different modes
+
+% TODO: add more source options
+
+tokenize_file(File, Tokens) :-
+    tokenize_file(File, Tokens, []).
+
+%! tokenize_file(+File:atom, -Tokens:list(term), +Options:list(term)) is semidet.
+%
+%   True when Tokens is unified with a list of tokens represening
+%   the text of File.
+%
+%   @see tokenize/3 which has the same available options and behavior.
+
+tokenize_file(File, Tokens, Options) :-
+    read_file_to_codes(File, Codes, [encoding(utf8)]),
+    tokenize(Codes, Tokens, Options).
+
+%! untokenize(+Tokens:list(term), -Untokens:list(codes)) is semidet.
 %
 %   True when Untokens is unified with a code list representation of each
 %   token in Tokens.
@@ -98,36 +158,6 @@ untokenize(Tokens, Untokens, _Options) :-
     maplist(token_to(codes), Tokens, TokenCodes),
     phrase(non_tokens(TokenCodes), Untokens),
     !.
-
-non_tokens([T])    --> T.
-non_tokens([T|Ts]) --> T, non_tokens(Ts).
-
-%% tokenize_file(+File:atom, -Tokens:list(term)) is semidet.
-%
-%   @see tokenize_file/3 is called with an empty list of options: thus, with defaults.
-%
-
-% Note: does not use phrase_from_file/3, thus not lazy or transparent
-% This choice was made so that tokenize_file will work with remotely
-% accessed files.
-% TODO: make this configurable, so it can be used in the different modes
-
-% TODO: add more source options
-
-tokenize_file(File, Tokens) :-
-    tokenize_file(File, Tokens, []).
-
-%% tokenize_file(+File:atom, -Tokens:list(term), +Options:list(term)) is semidet.
-%
-%   True when Tokens is unified with a list of tokens represening
-%   the text of File.
-%
-%   @see tokenize/3 which has the same available options and behavior.
-
-tokenize_file(File, Tokens, Options) :-
-    read_file_to_codes(File, Codes, [encoding(utf8)]),
-    tokenize(Codes, Tokens, Options).
-
 
 /***********************************
 *      {PRE,POST}-PROCESSING HELPERS      *
@@ -294,7 +324,7 @@ space --> [S], {code_type(S, white)}.
 punct([P]) --> [P], {code_type(P, punct)}.
 cntrl([C]) --> [C], {code_type(C, cntrl)}.
 
-%% move to general module
+% TODO move to general module
 
 codes_to_lower([], []).
 codes_to_lower([U|Uppers], [L|Lowers]) :-

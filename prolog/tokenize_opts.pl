@@ -6,6 +6,12 @@
 
 :- use_module(library(record)).
 
+/** <module> tokenize_opts
+
+This is an internal module used for option processing. The predicates exported
+are not meant for use by client code.
+*/
+
 % pre-processing options
 :- record preopts(
        cased:boolean=false
@@ -26,8 +32,8 @@
        pack:boolean=false
    ).
 
-%% process_options(+Options:list(term), -PreOpts:term, -PostOpts:term) is semidet.
-%
+%! process_options(+Options:list(term), -PreOpts:term, TokenOpts:term, -PostOpts:term) is semidet.
+
 process_options(Options, PreOpts, TokenOpts, PostOpts) :-
     make_preopts(Options, PreOpts, Rest0),
     make_postopts(Rest0, PostOpts, Rest1),

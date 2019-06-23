@@ -43,7 +43,7 @@ The matchers predicates exported and defined are:
 
 
 
-%% comment(+Start:2matcher,+End:2matcher)
+%! comment(+Start:2matcher,+End:2matcher)
 %    non recursive non tokenizing matcher
 
 comment_body(E) --> call(E),!.
@@ -53,7 +53,7 @@ comment(S,E) -->
     call(S),
     comment_body(E).
 
-%% comment_token(+Start:2matcher,+End:2matcher,-Matched:list(codes))
+%! comment_token(+Start:2matcher,+End:2matcher,-Matched:list(codes))
 %    non recursive tokenizing matcher
 
 comment_body_token(E,Text) -->
@@ -69,7 +69,7 @@ comment_token(S,E,Text) -->
     {append(HS,T,Text)},
     comment_body_token(E,T).
 
-%% comment_token_rec(+Start:2matcher,+End:2matcher,-Matched:list(codes))
+%! comment_token_rec(+Start:2matcher,+End:2matcher,-Matched:list(codes))
 %   recursive tokenizing matcher
 
 % Use this as the initial continuation, will just tidy up the matched result
@@ -95,7 +95,7 @@ comment_token_rec(S,E,Text) -->
     {append(HS,T,Text)},
     comment_body_token_rec(S,E,comment_body_rec_start,T).
 
-%% comment_rec(+Start:2matcher,+End:2matcher)
+%! comment_rec(+Start:2matcher,+End:2matcher)
 %    recursive non tokenizing matcher
 
 comment_body_rec(_,E) -->
